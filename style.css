@@ -1,0 +1,31 @@
+body {
+    background: black;
+}
+
+#canvas1 {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 5px solid white;
+}
+
+#playerImage, #backgroundImage, #enemyImage {
+    display: none;
+}
+
+
+/*
+#canvas1 {
+    border: 3px solid black;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 1000px;
+    width: 500px;
+    background: linear-gradient(111deg, rgba(255,0,0,.8), rgba(255,0,0,0) 70.71%),
+    linear-gradient(222deg, rgba(0,255,0,.8), rgba(0,255,0,0) 70.71%),
+    linear-gradient(333deg, rgba(0,0,255,.8), rgba(0,0,255,0) 70.71%);
+}
+*/

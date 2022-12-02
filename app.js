@@ -18,6 +18,8 @@ window.addEventListener('load', function() {
     //^should create a white rectangle at 50px x / 50px y, that is 100px wide / 150px height
 
     let enemies = [];
+    let score = 0;
+    let gameOver = false;
 
     class InputHandler {
         constructor() {
@@ -52,7 +54,11 @@ window.addEventListener('load', function() {
             this.y = this.gameHeight - this.height;
             this.image = document.getElementById('playerImage');
             this.frameX = 0;
+            this.maxFrame = 8;
             this.frameY = 0;
+            this.fps = 20;
+            this.frameTimer = 0;
+            this.frameInterval = 1000 / this.fps;
             this.speed = 0; //if pos move toon right if neg move toon left
             this.velocityY = 0; //vertical jump speed
             this.weight = 1; //gravity or opposing force to bring toon back down
@@ -60,9 +66,31 @@ window.addEventListener('load', function() {
         draw(context) {
             //context.fillStyle = 'red';
             //context.fillRect(this.x, this.y, this.width, this.height);
+            context.strokeStyle = 'red';
+            context.strokeRect(this.x, this.y, this.width, this.height);
+            context.beginPath();
+            context.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+            context.stroke();
             context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
         }
-        update(input) {
+        update(input, deltaTime, enemies) {
+            //collision detection between circles below
+            enemies.forEach(enemy => {
+                const dx = enemy.x - this.x;
+                const dy = enemy.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < enemy.width / 2 + this.width / 2) {
+                    gameOver = true;
+                }
+            });
+            //toon animation code
+            if (this.frameTimer > this.frameInterval) {
+                if (this.frameX >= this.maxFrame) this.frameX = 0;
+                else this.frameX++;
+                this.frameTimer = 0;
+            } else {
+                this.frameTimer += deltaTime;
+            }
             if (input.keys.indexOf('ArrowRight') > -1) {
                 this.speed = 5
             } else if (input.keys.indexOf('ArrowLeft') > -1) {
@@ -80,9 +108,11 @@ window.addEventListener('load', function() {
             this.y += this.velocityY;
             if (!this.onGround()) {
                 this.velocityY += this.weight;
+                this.maxFrame = 5; //allows only 5 frames instead of 8 while jumping
                 this.frameY = 1;
             } else {
                 this.velocityY = 0;
+                this.maxFrame = 8;
                 this.frameY = 0;
             }
             if (this.y > this.gameHeight - this.height) this.y = this.gameHeight - this.height
@@ -131,8 +161,14 @@ window.addEventListener('load', function() {
             this.frameTimer = 0;
             this.frameInterval = 1000 / this.fps;
             this.speed =  4; //you could Math.random() * 6 + 2; to have random enemy speeds
+            this.markeForDeletion = false;
         }
         draw(context) {
+            context.strokeStyle = 'red';
+            context.strokeRect(this.x, this.y, this.width, this.height); //for collision etection between rectangles
+            context.beginPath();
+            context.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+            context.stroke();
             context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
         }
         update(deltaTime) {
@@ -144,8 +180,13 @@ window.addEventListener('load', function() {
                 this.frameTimer += deltaTime;
             }
             this.x -= this.speed;
+            if (this.x < 0 - this.width) {
+                this.markeForDeletion = true;
+                score++;
+            }
         }
     }
+
 
     //enemies.push(new Enemy(canvas.width, canvas.height));
 
@@ -161,11 +202,24 @@ window.addEventListener('load', function() {
         enemies.forEach(enemy => {
             enemy.draw(ctx);
             enemy.update(deltaTime);
-        })
+        });
+        enemies = enemies.filter(enemy => !enemy.markeForDeletion);
     }
 
-    function displayStatusText() {
-
+    function displayStatusText(context) {
+        context.font = '40px Helvetica';
+        context.fillStyle = 'red';
+        context.fillText('Score: ' + score, 20, 50);
+        context.fillStyle = 'black';
+        context.fillText('Score: ' + score, 22, 52);
+        if (gameOver) {
+            context.textAlign = 'center';
+            context.fillStyle = 'red';
+            context.fillText('GAMEOVER', canvas.width / 2, 200);
+            context.textAlign = 'center';
+            context.fillStyle = 'black';
+            context.fillText('GAMEOVER', canvas.width / 2 + 2, 202);
+        }
     }
 
     const input = new InputHandler(); //by instantiating the code here all the code in the class called InputHandler() will be run ^.^
@@ -185,9 +239,10 @@ window.addEventListener('load', function() {
         background.draw(ctx);
         //background.update(); //<--commented out for now to conserve power auto scroll bg
         player.draw(ctx);
-        player.update(input);
+        player.update(input, deltaTime, enemies);
         handleEnemies(deltaTime);
-        requestAnimationFrame(animate);
+        displayStatusText(ctx);
+        if (!gameOver) requestAnimationFrame(animate);
     }
     animate(0);
 
@@ -243,4 +298,16 @@ CODE
 ^^^the above code is very important it tell the browser to update the screen with a new image each time it is called it then uses the requestAnimationFrame(animate) to continuasly call itself, games and animations are just the page updating really fast and showing you a new image each time maybe with slight movements in the x and y axis of the objects you place on the canvas. this is a fundamental concept of building single thread browser applications/animations/games. remember the page reloads using this function so whatever is written inside this function will be called multiple times per second depending on the speed of the machine you are running<---this is where deltaTime comes in to play if you want your applications animations and games to perform the same regardless of the hardware you use it on you are going to want to use deltaTime functions which compare the current frame with the frame before it to keep the frames running at a specific rate regardless of how fast the machine can update said frames...seriously...go...now....go watch a video on deltaTime and integrating deltaTime into your applications YOU WILL thank me later (^.^)..also dont forget to actually call your animate function like so: animate(); once it is called it will continue being called until the logic you have coded into the application tells it to stop or if you close your application
 
 to account for 'clipping' when using auto scrolling backgrounds you must use two of the same images for background then add (this.x + this.width - this.speed) <--this will be in the draw() method under the Background class
+
+CODE
+            enemies.forEach(enemy => {
+                const dx = enemy.x - this.x;
+                const dy = enemy.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < enemy.width / 2 + this.width / 2) {
+                    gameOver = true;
+                }
+            });
+CODE
+the above is the algorithm for collision detection between circles
 */

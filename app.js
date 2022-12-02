@@ -82,10 +82,10 @@ window.addEventListener('load', function() {
         update(input, deltaTime, enemies) {
             //collision detection between circles below
             enemies.forEach(enemy => {
-                const dx = (enemy.x + enemy.width / 2) - (this.x + this.width / 2);
-                const dy = (enemy.y + enemy.height / 2) - (this.y + this.height / 2);
+                const dx = (enemy.x + enemy.width / 10) - (this.x + this.width / 10);
+                const dy = (enemy.y + enemy.height / 10) - (this.y + this.height / 10);
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance < enemy.width / 2 + this.width / 2) {
+                if (distance < enemy.width / 2.8 + this.width / 2.8) {
                     gameOver = true;
                 }
             });

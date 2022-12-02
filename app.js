@@ -58,15 +58,15 @@ window.addEventListener('load', function() {
         draw(context) {
             context.fillStyle = 'red';
             context.fillRect(this.x, this.y, this.width, this.height);
-            context.drawImage(this.image, 0, 0, this.width, this.height, this.x, this.y, this.width, this.height);
+            context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
         }
         update(input) {
             if (input.keys.indexOf('ArrowRight') > -1) {
                 this.speed = 5
             } else if (input.keys.indexOf('ArrowLeft') > -1) {
                 this.speed = -5;
-            } else if (input.keys.indexOf('ArrowUp') > -1) {
-                this.velocityY -= 10;
+            } else if (input.keys.indexOf('ArrowUp') > -1 && this.onGround()) {
+                this.velocityY -= 33;
             } else {
                 this.speed = 0;
             }
@@ -78,8 +78,10 @@ window.addEventListener('load', function() {
             this.y += this.velocityY;
             if (!this.onGround()) {
                 this.velocityY += this.weight;
+                this.frameY = 1;
             } else {
                 this.velocityY = 0;
+                this.frameY = 0;
             }
             if (this.y > this.gameHeight - this.height) this.y = this.gameHeight - this.height
         }

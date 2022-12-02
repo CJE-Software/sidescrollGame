@@ -17,6 +17,8 @@ window.addEventListener('load', function() {
     //ctx.fillRect(50, 50, 100, 150);
     //^should create a white rectangle at 50px x / 50px y, that is 100px wide / 150px height
 
+    let enemies = [];
+
     class InputHandler {
         constructor() {
             this.keys = [];
@@ -56,8 +58,8 @@ window.addEventListener('load', function() {
             this.weight = 1; //gravity or opposing force to bring toon back down
         }
         draw(context) {
-            context.fillStyle = 'red';
-            context.fillRect(this.x, this.y, this.width, this.height);
+            //context.fillStyle = 'red';
+            //context.fillRect(this.x, this.y, this.width, this.height);
             context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
         }
         update(input) {
@@ -100,11 +102,11 @@ window.addEventListener('load', function() {
             this.y = 0;
             this.width = 2400;
             this.height = 720;
-            this.speed = 20;
+            this.speed = 8;
         }
         draw(context) {
             context.drawImage(this.image, this.x, this.y, this.width, this.height);
-            context.drawImage(this.image, this.x + this.width, this.y, this.width, this.height);
+            context.drawImage(this.image, this.x + this.width - this.speed, this.y, this.width, this.height);
 
         }
         update() {
@@ -114,11 +116,52 @@ window.addEventListener('load', function() {
     }
 
     class Enemy {
-
+        constructor(gameWidth, gameHeight) {
+            this.gameWidth = gameWidth;
+            this.gameHeight = gameHeight;
+            this.width = 160;
+            this.height = 119;
+            this.image = document.getElementById('enemyImage');
+            this.x = this.gameWidth;
+            this.y = this.gameHeight - this.height;
+            this.frameX = 0;
+            this.frameY = 0;
+            this.maxFrame = 5;
+            this.fps = 20;
+            this.frameTimer = 0;
+            this.frameInterval = 1000 / this.fps;
+            this.speed =  4; //you could Math.random() * 6 + 2; to have random enemy speeds
+        }
+        draw(context) {
+            context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
+        }
+        update(deltaTime) {
+            if (this.frameTimer > this.frameInterval) {
+                if (this.frameX >= this.maxFrame) this.frameX = 0;
+                else this. frameX++;
+                this.frameTimer = 0;
+            } else {
+                this.frameTimer += deltaTime;
+            }
+            this.x -= this.speed;
+        }
     }
 
-    function handleEnemies() {
+    //enemies.push(new Enemy(canvas.width, canvas.height));
 
+
+    function handleEnemies(deltaTime) {
+        if (enemyTimer > enemyInterval + randomEnemyInterval) {
+            enemies.push(new Enemy(canvas.width, canvas.height));
+            randomEnemyInterval = Math.random() * 1000 + 500;
+            enemyTimer = 0;
+        } else {
+            enemyTimer += deltaTime;
+        }
+        enemies.forEach(enemy => {
+            enemy.draw(ctx);
+            enemy.update(deltaTime);
+        })
     }
 
     function displayStatusText() {
@@ -130,15 +173,23 @@ window.addEventListener('load', function() {
     const background = new Background(canvas.width, canvas.height);
     //player.draw(ctx);
 
-    function animate() {
+    let lastTime = 0;
+    let enemyTimer = 0;
+    let enemyInterval = 1000; //time in milliseconds
+    let randomEnemyInterval = Math.random() * 1000 + 600;
+
+    function animate(timeStamp) {
+        const deltaTime = timeStamp - lastTime;
+        lastTime = timeStamp;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         background.draw(ctx);
-        background.update();
+        //background.update(); //<--commented out for now to conserve power auto scroll bg
         player.draw(ctx);
         player.update(input);
+        handleEnemies(deltaTime);
         requestAnimationFrame(animate);
     }
-    animate();
+    animate(0);
 
 
 });
@@ -190,4 +241,6 @@ CODE
     animate();
 CODE
 ^^^the above code is very important it tell the browser to update the screen with a new image each time it is called it then uses the requestAnimationFrame(animate) to continuasly call itself, games and animations are just the page updating really fast and showing you a new image each time maybe with slight movements in the x and y axis of the objects you place on the canvas. this is a fundamental concept of building single thread browser applications/animations/games. remember the page reloads using this function so whatever is written inside this function will be called multiple times per second depending on the speed of the machine you are running<---this is where deltaTime comes in to play if you want your applications animations and games to perform the same regardless of the hardware you use it on you are going to want to use deltaTime functions which compare the current frame with the frame before it to keep the frames running at a specific rate regardless of how fast the machine can update said frames...seriously...go...now....go watch a video on deltaTime and integrating deltaTime into your applications YOU WILL thank me later (^.^)..also dont forget to actually call your animate function like so: animate(); once it is called it will continue being called until the logic you have coded into the application tells it to stop or if you close your application
+
+to account for 'clipping' when using auto scrolling backgrounds you must use two of the same images for background then add (this.x + this.width - this.speed) <--this will be in the draw() method under the Background class
 */
